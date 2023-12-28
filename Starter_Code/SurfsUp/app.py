@@ -108,8 +108,27 @@ def stations():
     return jsonify(station_dicts)
 
 
-# @app.route(/api/v1.0/tobs)
-# def tobs():
+@app.route("/api/v1.0/tobs")
+def tobs():
+    most_active_station = "USC00519281"
+    most_recent_date = session.query(func.max(Measurement.date)).first()
+    most_recent_date = str(most_recent_date)
+    most_recent_as_dt = datetime.strptime(most_recent_date, "('%Y-%m-%d',)").date()
+    one_year_ago = most_recent_as_dt - dt.timedelta(days=365)
+
+    temp_data = (
+        session.query(Measurement.date, Measurement.tobs)
+        .filter(Measurement.station == most_active_station)
+        .filter(Measurement.date >= one_year_ago)
+        .all()
+    )
+    temp_dict = [{"date": date, "temp": temp} for date, temp in temp_data]
+
+    return jsonify(temp_dict)
+
+
+# @app.route("/api/v1.0/<start>")
+# def start(start):
 
 
 if __name__ == "__main__":
