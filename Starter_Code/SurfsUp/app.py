@@ -127,8 +127,55 @@ def tobs():
     return jsonify(temp_dict)
 
 
-# @app.route("/api/v1.0/<start>")
-# def start(start):
+@app.route("/api/v1.0/<start>", defaults={"end": None})
+@app.route("/api/v1.0/<start>/<end>")
+def determine_temps_for_date_range(start, end):
+    """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range."""
+    """When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date."""
+    """When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
+    # Create our session (link) from Python to the DB.
+    session = Session(engine)
+
+    # If we have both a start date and an end date.
+    if end != None:
+        temperature_data = (
+            session.query(
+                func.min(Measurement.tobs),
+                func.avg(Measurement.tobs),
+                func.max(Measurement.tobs),
+            )
+            .filter(Measurement.date >= start)
+            .filter(Measurement.date <= end)
+            .all()
+        )
+    # If we only have a start date.
+    else:
+        temperature_data = (
+            session.query(
+                func.min(Measurement.tobs),
+                func.avg(Measurement.tobs),
+                func.max(Measurement.tobs),
+            )
+            .filter(Measurement.date >= start)
+            .all()
+        )
+
+    session.close()
+
+    # Convert the query results to a list.
+    temperature_list = []
+    no_temperature_data = False
+    for min_temp, avg_temp, max_temp in temperature_data:
+        if min_temp == None or avg_temp == None or max_temp == None:
+            no_temperature_data = True
+        temperature_list.append(min_temp)
+        temperature_list.append(avg_temp)
+        temperature_list.append(max_temp)
+    # Return the JSON representation of dictionary.
+    if no_temperature_data == True:
+        return f"No temperature data found for the given date range. Try another date range."
+    else:
+        return jsonify(temperature_list)
 
 
 if __name__ == "__main__":
