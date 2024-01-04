@@ -53,8 +53,9 @@ def welcome():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/>start<<br/>"
+        f"/api/v1.0/>start>/>end<<br/>"
+        f"For >start< and >end< enter your desired start and end date"
         "<br/>"
     )
 
@@ -130,9 +131,6 @@ def tobs():
 @app.route("/api/v1.0/<start>", defaults={"end": None})
 @app.route("/api/v1.0/<start>/<end>")
 def determine_temps_for_date_range(start, end):
-    """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range."""
-    """When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date."""
-    """When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."""
     # Create our session (link) from Python to the DB.
     session = Session(engine)
 
@@ -152,6 +150,7 @@ def determine_temps_for_date_range(start, end):
     else:
         temperature_data = (
             session.query(
+                Measurement.date,
                 func.min(Measurement.tobs),
                 func.avg(Measurement.tobs),
                 func.max(Measurement.tobs),
